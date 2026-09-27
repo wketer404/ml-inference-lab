@@ -25,3 +25,10 @@ with torch.no_grad():
 
 # Convert output scores to probabilities
 probabilities = torch.softmax(output[0], dim=0)
+
+# Get top 5 predictions
+top5_prob, top5_idx = torch.topk(probabilities, 5)
+
+for prob, idx in zip(top5_prob, top5_idx):
+    label = weights.meta["categories"][idx]
+    print(f"{label}: {prob.item() * 100:.2f}%")
