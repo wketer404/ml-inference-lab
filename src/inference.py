@@ -1,7 +1,10 @@
+import sys
 from PIL import Image
 
 import torch
 from torchvision.models import ResNet50_Weights, resnet50
+
+image_path = sys.argv[1]
 
 # Load pretrained weights
 weights = ResNet50_Weights.DEFAULT
@@ -14,7 +17,7 @@ model.eval()
 preprocess = weights.transforms()
 
 # Load an image
-image = Image.open("images/test.jpg").convert("RGB")
+image = Image.open(image_path).convert("RGB")
 
 # Convert image -> tensor and add btach dimension
 input_tensor = preprocess(image).unsqueeze(0)
