@@ -43,8 +43,8 @@ The project will progress through the following stages:
 - [x] Accept image paths through the command line
 - [x] Evaluate on a dataset
 - [x] Establish dataset-level Top-1 accuracy baseline
-- [ ] Benchmark GPU latency and throughput
-- [ ] Add FP16 inference
+- [x] Benchmark GPU latency and throughput
+- [x] Add FP32 & FP16 inference
 - [ ] Export to ONNX
 - [ ] Benchmark ONNX Runtime
 - [ ] Add TensorRT
@@ -53,9 +53,12 @@ The project will progress through the following stages:
 
 ## Current Results
 
-| Model | Dataset | Images | Top-1 Accuracy |
-|---|---|---:|---:|
-| ResNet-50 | Imagenette validation set | 3,925 | 80.31% |
+| Configuration | Dataset | Images | Accuracy | Batch Size | Latency / Batch | Throughput | Peak VRAM |
+|---|---|---:|---:|---:|---:|---:|---:|
+| PyTorch FP32 | Imagenette validation set | 3,925 | 80.31% | 32 | 49.97 ms | 640.44 img/s | 442.79 MB |
+| PyTorch FP16 | Imagenette validation set | 3,925 | 80.38% | 32 | 53.74 ms | 595.49 img/s | 267.74 MB |
+
+> Latency and throughput were measured using 100 repeated inference iterations on a fixed batch after GPU warm-up. Peak VRAM refers to PyTorch-allocated GPU memory.
 
 ## Current Pipelines
 
@@ -97,11 +100,12 @@ Top-1 predictions and accuracy
 ml-inference-lab/
 ├── src/
 │   ├── inference.py
-│   └── evaluate.py
+│   ├── evaluate.py
+│   └── benchmark.py
 ├── images/
+├── data/              # gitignored
 ├── README.md
 └── .gitignore
-```
 
 ## Setup
 
@@ -169,13 +173,13 @@ Current:
 - PyTorch
 - TorchVision
 - Pillow
+- CUDA
 
 Planned:
 
 - ONNX
 - ONNX Runtime
 - NVIDIA TensorRT
-- CUDA
 - GPU profiling tools
 
 ## Possible Future Work

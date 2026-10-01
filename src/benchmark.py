@@ -27,17 +27,20 @@ loader = DataLoader(
 
 model = resnet50(weights=weights)
 model.to(device)
+model.half()
 model.eval()
 
 with torch.inference_mode():
-    # Warm up the GPU
+    # Warm up
     for images, _ in loader:
-        images = images.to(device, non_blocking=True)
+        images = images.to(device, non_blocking=True).half()
         model(images)
         break
 
+    torch.cuda.reset_peak_memory_stats()
+
     images, _ = next(iter(loader))
-    images = images.to(device, non_blocking=True)
+    images = images.to(device, non_blocking=True).half()
 
     num_iterations = 100
 
@@ -53,8 +56,12 @@ with torch.inference_mode():
 
     total_time = end - start
     latency = total_time / num_iterations
+
     batch_size = images.shape[0]
     throughput = batch_size * num_iterations / total_time
 
+    peak_memory = torch.cuda.max_memory_allocated() / (1024 ** 2)
+
+    print(f"Peak GPU memory: {peak_memory:.2f} MB")
     print(f"Average batch latency: {latency * 1000:.2f} ms")
     print(f"Throughput: {throughput:.2f} images/sec")

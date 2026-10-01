@@ -39,6 +39,7 @@ imagenette_to_imagenet = torch.tensor([
 
 model = resnet50(weights=weights)
 model.to(device)
+model.half()
 model.eval()
 
 correct = 0
@@ -49,7 +50,7 @@ with torch.inference_mode():
 
         true_labels = imagenette_to_imagenet[labels]
         
-        images = images.to(device, non_blocking=True)
+        images = images.to(device, non_blocking=True).half()
         true_labels = true_labels.to(device)
 
         outputs = model(images)
