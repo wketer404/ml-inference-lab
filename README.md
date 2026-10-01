@@ -43,8 +43,8 @@ The project will progress through the following stages:
 - [x] Accept image paths through the command line
 - [x] Evaluate on a dataset
 - [x] Establish dataset-level Top-1 accuracy baseline
-- [x] Benchmark GPU latency and throughput
-- [x] Add FP32 & FP16 inference
+- [x] Complete PyTorch FP32 GPU benchmarking
+- [x] Complete PyTorch FP16 benchmarking
 - [ ] Export to ONNX
 - [ ] Benchmark ONNX Runtime
 - [ ] Add TensorRT
@@ -94,6 +94,12 @@ ResNet-50
 Top-1 predictions and accuracy
 ```
 
+GPU benchmarking:
+
+```text
+Fixed input batch → GPU → ResNet-50 → repeated inference ×100 → latency / throughput / peak VRAM
+```
+
 ## Project Structure
 
 ```text
@@ -106,6 +112,7 @@ ml-inference-lab/
 ├── data/              # gitignored
 ├── README.md
 └── .gitignore
+```
 
 ## Setup
 
@@ -153,14 +160,14 @@ coil: 0.08%
 
 The model currently uses a pretrained ResNet-50 trained on ImageNet-1K and returns predictions from its 1,000 supported classes.
 
-## Planned Benchmarking
+## Benchmark Configurations
 
-Each optimization will eventually be compared using a common benchmark:
+Configurations are compared using a common benchmark. Latency is per batch of 32 images; unmeasured values remain TBD.
 
 | Configuration | Accuracy | Latency | Throughput | VRAM | Model Size |
 |---|---:|---:|---:|---:|---:|
-| PyTorch FP32 | TBD | TBD | TBD | TBD | TBD |
-| PyTorch FP16 | TBD | TBD | TBD | TBD | TBD |
+| PyTorch FP32 | 80.31% | 49.97 ms | 640.44 img/s | 442.79 MB | TBD |
+| PyTorch FP16 | 80.38% | 53.74 ms | 595.49 img/s | 267.74 MB | TBD |
 | ONNX Runtime | TBD | TBD | TBD | TBD | TBD |
 | TensorRT FP16 | TBD | TBD | TBD | TBD | TBD |
 | TensorRT INT8 | TBD | TBD | TBD | TBD | TBD |
