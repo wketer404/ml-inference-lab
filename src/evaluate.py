@@ -1,4 +1,3 @@
-import time
 import torch
 from torch.utils.data import DataLoader
 from torchvision.datasets import Imagenette
@@ -22,6 +21,7 @@ loader = DataLoader(
     batch_size=32,
     shuffle=False,
     num_workers=2,
+    pin_memory=True,
 )
 
 imagenette_to_imagenet = torch.tensor([
@@ -45,24 +45,14 @@ correct = 0
 total = 0
 
 with torch.inference_mode():
-
-    inference_time = 0
     for images, labels in loader:
 
         true_labels = imagenette_to_imagenet[labels]
-
-        images = images.to(device)
+        
+        images = images.to(device, non_blocking=True)
         true_labels = true_labels.to(device)
 
-        torch.cuda.synchronize()
-        start = time.perf_counter()
-
         outputs = model(images)
-
-        torch.cuda.synchronize()
-        end = time.perf_counter()
-
-        inference_time += end - start
 
         predictions = outputs.argmax(dim=1)
 
@@ -71,6 +61,5 @@ with torch.inference_mode():
 
 accuracy = correct / total * 100
 
-print(f"GPU inference time: {inference_time:.2f} seconds")
 print(f"Correct: {correct}/{total}")
 print(f"Top-1 accuracy: {accuracy:.2f}%")
