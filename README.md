@@ -33,7 +33,6 @@ The project will progress through the following stages:
 9. Test INT8 quantization
 10. Profile GPU performance and bottlenecks
 11. Compare all configurations
-12. Explore advanced optimizations such as pruning, distillation, or custom CUDA kernels
 
 ## Current Progress
 
@@ -42,15 +41,25 @@ The project will progress through the following stages:
 - [x] Run single-image inference
 - [x] Display top-5 ImageNet predictions
 - [x] Accept image paths through the command line
-- [ ] Evaluate on a dataset
-- [ ] Build baseline benchmark
+- [x] Evaluate on a dataset
+- [x] Establish dataset-level Top-1 accuracy baseline
+- [ ] Benchmark GPU latency and throughput
 - [ ] Add FP16 inference
 - [ ] Export to ONNX
+- [ ] Benchmark ONNX Runtime
 - [ ] Add TensorRT
 - [ ] Add INT8 quantization
 - [ ] Profile GPU performance
 
-## Current Pipeline
+## Current Results
+
+| Model | Dataset | Images | Top-1 Accuracy |
+|---|---|---:|---:|
+| ResNet-50 | Imagenette validation set | 3,925 | 80.31% |
+
+## Current Pipelines
+
+Single-image inference:
 
 ```text
 Image
@@ -68,12 +77,27 @@ Softmax
 Top-5 predictions
 ```
 
+Dataset evaluation:
+
+```text
+Imagenette validation set
+  ↓
+Preprocessing and DataLoader
+  ↓
+Batches of [32, 3, 224, 224]
+  ↓
+ResNet-50
+  ↓
+Top-1 predictions and accuracy
+```
+
 ## Project Structure
 
 ```text
 ml-inference-lab/
 ├── src/
-│   └── inference.py
+│   ├── inference.py
+│   └── evaluate.py
 ├── images/
 ├── README.md
 └── .gitignore
@@ -100,6 +124,8 @@ Install dependencies:
 ```bash
 pip install torch torchvision pillow
 ```
+
+Run `python src/evaluate.py` to download the Imagenette dataset into `data/` and evaluate the validation set. The `data/` directory is gitignored.
 
 ## Running Inference
 
@@ -137,14 +163,27 @@ Each optimization will eventually be compared using a common benchmark:
 
 ## Technologies
 
+Current:
+
 - Python
 - PyTorch
 - TorchVision
+- Pillow
+
+Planned:
+
 - ONNX
 - ONNX Runtime
 - NVIDIA TensorRT
 - CUDA
 - GPU profiling tools
+
+## Possible Future Work
+
+- Model pruning
+- Knowledge distillation
+- Comparison with other architectures
+- Custom CUDA kernels
 
 ## Learning Goals
 
@@ -160,11 +199,6 @@ This project is intended to build experience with:
 - CUDA/GPU performance
 - Profiling and bottleneck analysis
 - Reproducible ML experimentation
-
-## Contributors
-
-- Keter Wu
-- Additional contributor(s)
 
 ## Status
 
