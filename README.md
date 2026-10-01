@@ -2,7 +2,7 @@
 
 A hands-on machine learning systems project focused on optimizing neural network inference performance.
 
-The goal is to take a pretrained vision model, establish a reproducible performance baseline, apply different inference optimizations, and measure the tradeoffs between speed, memory usage, and model accuracy.
+The goal is to take a pretrained vision model, establish reproducible performance baselines, apply different inference optimizations, and measure the tradeoffs between speed, memory usage, model accuracy, and model size.
 
 ## Project Goal
 
@@ -10,13 +10,13 @@ We want to answer a simple question:
 
 > How much can we improve neural network inference performance without significantly hurting accuracy?
 
-The project will compare different inference configurations across metrics such as:
+The project compares different inference configurations across:
 
 - Accuracy
 - Latency
 - Throughput
 - GPU memory usage
-- Model size
+- Model artifact size
 
 ## Roadmap
 
@@ -45,11 +45,12 @@ The project will progress through the following stages:
 - [x] Establish dataset-level Top-1 accuracy baseline
 - [x] Complete PyTorch FP32 GPU benchmarking
 - [x] Complete PyTorch FP16 benchmarking
-- [x] Export to ONNX
-- [x] Benchmark ONNX Runtime
+- [x] Export FP32 and FP16 models to ONNX
+- [x] Benchmark ONNX Runtime FP32 and FP16 inference
 - [ ] Add TensorRT
 - [ ] Add INT8 quantization
 - [ ] Profile GPU performance
+- [ ] Compare all configurations
 
 ## Benchmark Environment
 
@@ -57,29 +58,52 @@ The project will progress through the following stages:
 
 - GPU: NVIDIA GeForce GTX 1080 Ti, 11 GB VRAM
 - CPU: 2× Intel Xeon E5-2630 v4 @ 2.20 GHz
-- CPU cores: 20 physical cores / 40 threads
+- CPU topology: 20 physical cores / 40 logical CPUs visible
+- Container CPU quota: approximately 2 cores
 - RAM: 16 GB allocated to the container
 
 ### Software
 
-- OS/Environment: UCSD DSMLP
+- Environment: UCSD DSMLP
 - NVIDIA Driver: 535.161.08
 - CUDA: 12.2
 - PyTorch: 2.2.1+cu121
 - Python: 3.11
+- ONNX: 1.16.1
+- ONNX Runtime: 1.18.0
 
-## Current Results
+## Benchmark Methodology
 
-| Configuration | Dataset | Images | Accuracy | Batch Size | Latency / Batch | Throughput | Peak VRAM |
+- Model: ResNet-50 pretrained on ImageNet-1K
+- Dataset: Imagenette validation set
+- Images: 3,925
+- Classes: 10 Imagenette classes mapped to their corresponding ImageNet-1K labels
+- Input size: 224 × 224
+- Batch size: 32
+- Warm-up: 1 batch
+- Timed iterations: 100
+- Latency: average inference time per batch
+- Throughput: images processed per second
+- PyTorch GPU input transfers are excluded from the timed benchmark
+- ONNX Runtime benchmarks use CUDA I/O binding to keep inputs and outputs on the GPU
+
+## Benchmark Results
+
+| Runtime | Precision | Accuracy | Batch Size | Latency / Batch | Throughput | GPU Memory | Artifact Size |
 |---|---|---:|---:|---:|---:|---:|---:|
-| PyTorch FP32 | Imagenette validation set | 3,925 | 80.31% | 32 | 49.97 ms | 640.44 img/s | 442.79 MB |
-| PyTorch FP16 | Imagenette validation set | 3,925 | 80.38% | 32 | 53.74 ms | 595.49 img/s | 267.74 MB |
+| PyTorch | FP32 | 80.31% | 32 | 49.97 ms | 640.44 img/s | 442.79 MiB | TBD |
+| PyTorch | FP16 | 80.38% | 32 | 53.74 ms | 595.49 img/s | 267.74 MiB | TBD |
+| ONNX Runtime | FP32 | 80.31% | 32 | 43.49 ms | 735.82 img/s | ~712 MiB | 98 MiB |
+| ONNX Runtime | FP16 | 80.36% | 32 | 44.54 ms | 718.41 img/s | ~748 MiB | 49 MiB |
+| TensorRT | FP32 | TBD | 32 | TBD | TBD | TBD | TBD |
+| TensorRT | FP16 | TBD | 32 | TBD | TBD | TBD | TBD |
+| TensorRT | INT8 | TBD | 32 | TBD | TBD | TBD | TBD |
 
-> Latency and throughput were measured using 100 repeated inference iterations on a fixed batch after GPU warm-up. Peak VRAM refers to PyTorch-allocated GPU memory.
+> PyTorch GPU memory represents peak PyTorch-allocated memory measured with `torch.cuda.max_memory_allocated()`. ONNX Runtime GPU memory represents the increase in total GPU memory reported by `nvidia-smi` from a 0 MiB baseline, so memory values are not directly comparable across runtimes.
 
 ## Current Pipelines
 
-Single-image inference:
+### Single-Image Inference
 
 ```text
 Image
@@ -97,7 +121,7 @@ Softmax
 Top-5 predictions
 ```
 
-Dataset evaluation:
+### Dataset Evaluation
 
 ```text
 Imagenette validation set
@@ -111,10 +135,34 @@ ResNet-50
 Top-1 predictions and accuracy
 ```
 
-GPU benchmarking:
+### GPU Benchmarking
 
 ```text
-Fixed input batch → GPU → ResNet-50 → repeated inference ×100 → latency / throughput / peak VRAM
+Fixed input batch
+  ↓
+CPU → GPU transfer
+  ↓
+GPU inference
+  ↓
+Repeated inference ×100
+  ↓
+Latency / Throughput / GPU Memory
+```
+
+### ONNX Runtime
+
+```text
+ONNX model
+  ↓
+ONNX Runtime
+  ↓
+I/O binding
+  ↓
+CUDA Execution Provider
+  ↓
+GPU inference
+  ↓
+Latency / Throughput
 ```
 
 ## Project Structure
@@ -124,9 +172,13 @@ ml-inference-lab/
 ├── src/
 │   ├── inference.py
 │   ├── evaluate.py
-│   └── benchmark.py
+│   ├── benchmark.py
+│   ├── export_onnx.py
+│   ├── evaluate_onnx.py
+│   └── benchmark_onnx.py
 ├── images/
 ├── data/              # gitignored
+├── models/            # gitignored; generated ONNX artifacts
 ├── README.md
 └── .gitignore
 ```
@@ -147,13 +199,21 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Install dependencies:
+Install the core dependencies:
 
 ```bash
-pip install torch torchvision pillow
+pip install torch torchvision pillow numpy onnx
 ```
 
-Run `python src/evaluate.py` to download the Imagenette dataset into `data/` and evaluate the validation set. The `data/` directory is gitignored.
+GPU benchmarking with ONNX Runtime requires a compatible NVIDIA CUDA environment and the CUDA-enabled ONNX Runtime package.
+
+To evaluate the model on Imagenette:
+
+```bash
+python src/evaluate.py
+```
+
+This downloads the Imagenette dataset into `data/` and evaluates the validation set. The `data/` directory is gitignored.
 
 ## Running Inference
 
@@ -175,39 +235,25 @@ grocery store: 0.10%
 coil: 0.08%
 ```
 
-The model currently uses a pretrained ResNet-50 trained on ImageNet-1K and returns predictions from its 1,000 supported classes.
-
-## Benchmark Configurations
-
-Configurations are compared using a common benchmark. Latency is per batch of 32 images; unmeasured values remain TBD.
-
-| Runtime | Precision | Accuracy | Batch Size | Latency / Batch | Throughput | GPU Memory | Artifact Size |
-|---|---|---:|---:|---:|---:|---:|---:|
-| PyTorch | FP32 | 80.31% | 32 | 49.97 ms | 640.44 img/s | 442.79 MiB | TBD |
-| PyTorch | FP16 | 80.38% | 32 | 53.74 ms | 595.49 img/s | 267.74 MiB | TBD |
-| ONNX Runtime | FP32 | 80.31% | 32 | 43.49 ms | 735.82 img/s | ~712 MiB | 98 MiB |
-| ONNX Runtime | FP16 | 80.36% | 32 | 44.54 ms | 718.41 img/s | ~748 MiB | 49 MiB |
-| TensorRT | FP32 | TBD | 32 | TBD | TBD | TBD | TBD |
-| TensorRT | FP16 | TBD | 32 | TBD | TBD | TBD | TBD |
-| TensorRT | INT8 | TBD | 32 | TBD | TBD | TBD | TBD |
-
-> Memory measurements are not directly comparable across runtimes. PyTorch values represent peak PyTorch-allocated GPU memory measured with `torch.cuda.max_memory_allocated()`, while the ONNX Runtime value represents the increase in total GPU memory reported by `nvidia-smi` from a 0 MiB baseline.
+The model uses a pretrained ResNet-50 trained on ImageNet-1K and returns predictions from its 1,000 supported classes.
 
 ## Technologies
 
-Current:
+### Current
 
 - Python
 - PyTorch
 - TorchVision
 - Pillow
+- NumPy
 - CUDA
-
-Planned:
-
 - ONNX
 - ONNX Runtime
+
+### Planned
+
 - NVIDIA TensorRT
+- INT8 quantization
 - GPU profiling tools
 
 ## Possible Future Work
