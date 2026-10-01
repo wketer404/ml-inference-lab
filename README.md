@@ -166,11 +166,13 @@ Configurations are compared using a common benchmark. Latency is per batch of 32
 
 | Configuration | Accuracy | Latency | Throughput | VRAM | Model Size |
 |---|---:|---:|---:|---:|---:|
-| PyTorch FP32 | 80.31% | 49.97 ms | 640.44 img/s | 442.79 MB | TBD |
-| PyTorch FP16 | 80.38% | 53.74 ms | 595.49 img/s | 267.74 MB | TBD |
-| ONNX Runtime | TBD | TBD | TBD | TBD | TBD |
+| PyTorch FP32 | 80.31% | 49.97 ms | 640.44 img/s | 442.79 MiB | TBD |
+| PyTorch FP16 | 80.38% | 53.74 ms | 595.49 img/s | 267.74 MiB | TBD |
+| ONNX Runtime | 80.31% | 43.49 ms | 735.82 img/s | ~712 MiB   | TBD |
 | TensorRT FP16 | TBD | TBD | TBD | TBD | TBD |
 | TensorRT INT8 | TBD | TBD | TBD | TBD | TBD |
+
+> Memory measurements are not directly comparable across runtimes. PyTorch values represent peak PyTorch-allocated GPU memory measured with `torch.cuda.max_memory_allocated()`, while the ONNX Runtime value represents the increase in total GPU memory reported by `nvidia-smi` from a 0 MiB baseline.
 
 ## Technologies
 
