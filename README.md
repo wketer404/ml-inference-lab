@@ -45,11 +45,28 @@ The project will progress through the following stages:
 - [x] Establish dataset-level Top-1 accuracy baseline
 - [x] Complete PyTorch FP32 GPU benchmarking
 - [x] Complete PyTorch FP16 benchmarking
-- [ ] Export to ONNX
-- [ ] Benchmark ONNX Runtime
+- [x] Export to ONNX
+- [x] Benchmark ONNX Runtime
 - [ ] Add TensorRT
 - [ ] Add INT8 quantization
 - [ ] Profile GPU performance
+
+## Benchmark Environment
+
+### Hardware
+
+- GPU: NVIDIA GeForce GTX 1080 Ti, 11 GB VRAM
+- CPU: 2× Intel Xeon E5-2630 v4 @ 2.20 GHz
+- CPU cores: 20 physical cores / 40 threads
+- RAM: 16 GB allocated to the container
+
+### Software
+
+- OS/Environment: UCSD DSMLP
+- NVIDIA Driver: 535.161.08
+- CUDA: 12.2
+- PyTorch: 2.2.1+cu121
+- Python: 3.11
 
 ## Current Results
 
@@ -164,13 +181,15 @@ The model currently uses a pretrained ResNet-50 trained on ImageNet-1K and retur
 
 Configurations are compared using a common benchmark. Latency is per batch of 32 images; unmeasured values remain TBD.
 
-| Configuration | Accuracy | Latency | Throughput | VRAM | Model Size |
-|---|---:|---:|---:|---:|---:|
-| PyTorch FP32 | 80.31% | 49.97 ms | 640.44 img/s | 442.79 MiB | TBD |
-| PyTorch FP16 | 80.38% | 53.74 ms | 595.49 img/s | 267.74 MiB | TBD |
-| ONNX Runtime | 80.31% | 43.49 ms | 735.82 img/s | ~712 MiB   | TBD |
-| TensorRT FP16 | TBD | TBD | TBD | TBD | TBD |
-| TensorRT INT8 | TBD | TBD | TBD | TBD | TBD |
+| Runtime | Precision | Accuracy | Batch Size | Latency / Batch | Throughput | GPU Memory | Artifact Size |
+|---|---|---:|---:|---:|---:|---:|---:|
+| PyTorch | FP32 | 80.31% | 32 | 49.97 ms | 640.44 img/s | 442.79 MiB | TBD |
+| PyTorch | FP16 | 80.38% | 32 | 53.74 ms | 595.49 img/s | 267.74 MiB | TBD |
+| ONNX Runtime | FP32 | 80.31% | 32 | 43.49 ms | 735.82 img/s | ~712 MiB | 98 MiB |
+| ONNX Runtime | FP16 | 80.36% | 32 | 44.54 ms | 718.41 img/s | ~748 MiB | 49 MiB |
+| TensorRT | FP32 | TBD | 32 | TBD | TBD | TBD | TBD |
+| TensorRT | FP16 | TBD | 32 | TBD | TBD | TBD | TBD |
+| TensorRT | INT8 | TBD | 32 | TBD | TBD | TBD | TBD |
 
 > Memory measurements are not directly comparable across runtimes. PyTorch values represent peak PyTorch-allocated GPU memory measured with `torch.cuda.max_memory_allocated()`, while the ONNX Runtime value represents the increase in total GPU memory reported by `nvidia-smi` from a 0 MiB baseline.
 

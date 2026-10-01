@@ -7,7 +7,11 @@ weights = ResNet50_Weights.DEFAULT
 model = resnet50(weights=weights)
 model.eval()
 
-dummy_input = torch.randn(1, 3, 224, 224)
+dummy_input = torch.randn(
+    1, 3, 224, 224,
+    device="cuda",
+    dtype=torch.float16,
+)
 
 torch.onnx.export(
     model,
