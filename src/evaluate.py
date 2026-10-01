@@ -1,7 +1,10 @@
+import time
 import torch
 from torch.utils.data import DataLoader
 from torchvision.datasets import Imagenette
 from torchvision.models import ResNet50_Weights, resnet50
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 weights = ResNet50_Weights.DEFAULT
 preprocess = weights.transforms()
@@ -10,7 +13,7 @@ dataset = Imagenette(
     root="data",
     split="val",
     size="160px",
-    download=True,
+    download=False,
     transform=preprocess,
 )
 
@@ -18,7 +21,7 @@ loader = DataLoader(
     dataset,
     batch_size=32,
     shuffle=False,
-    num_workers=0,
+    num_workers=2,
 )
 
 imagenette_to_imagenet = torch.tensor([
@@ -35,17 +38,31 @@ imagenette_to_imagenet = torch.tensor([
 ])
 
 model = resnet50(weights=weights)
+model.to(device)
 model.eval()
 
 correct = 0
 total = 0
 
 with torch.inference_mode():
+
+    inference_time = 0
     for images, labels in loader:
 
         true_labels = imagenette_to_imagenet[labels]
 
+        images = images.to(device)
+        true_labels = true_labels.to(device)
+
+        torch.cuda.synchronize()
+        start = time.perf_counter()
+
         outputs = model(images)
+
+        torch.cuda.synchronize()
+        end = time.perf_counter()
+
+        inference_time += end - start
 
         predictions = outputs.argmax(dim=1)
 
@@ -54,5 +71,6 @@ with torch.inference_mode():
 
 accuracy = correct / total * 100
 
+print(f"GPU inference time: {inference_time:.2f} seconds")
 print(f"Correct: {correct}/{total}")
 print(f"Top-1 accuracy: {accuracy:.2f}%")
